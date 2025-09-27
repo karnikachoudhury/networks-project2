@@ -45,6 +45,11 @@ class LSRouter(Router):
         elif self.clock.read_tick() < BROADCAST_INTERVAL:
             # TODO: Go through the LSAs received so far.
             # broadcast each LSA to this router's neighbors if the LSA has not been broadcasted yet
+            for lsa in self.lsa_dict:
+                if not self.broadcasted[lsa]:
+                    for neighbor in self.neighbors:
+                        lsa_dict[lsa].send(neighbor, self.links, self.router_id)
+                
             pass
         else:
             return
@@ -53,8 +58,11 @@ class LSRouter(Router):
         # TODO: do the same as run_one_tick above without computing routes
         # Return value: whether any new LSA was broadcasted at the current tick.
         # The return value is used by simulator.py to check for convergence.
-        
-        pass
+
+        for broadcast in self.broadcasted:
+            if not broadcast:
+                return False
+        return True
 
     # Note that adv_router is the router that generated this advertisement,
     # which may be different from "self",
@@ -74,6 +82,23 @@ class LSRouter(Router):
         # have populated the prev dictionary which maps a destination to the penultimate hop
         # on the shortest path to this destination from this router.
 
+        distances = dict()
+
+        for lsa in self.lsa_dict:
+            distances[lsa] = float('inf')
+
+        queue = []
+        queue.append((router_id, 0))
+
+        while len(queue) != 0:
+            current_node = queue.remove(0)
+            distances[current_node[0]] = current_node[1]
+
+            for neighbor in self.lsa_dict[current_node[0]]:
+                current_distance = distances[neighbor]
+                cost = lsa_dict[current_node][neighbor]
+                neighbor_distance = lsa_dict[neighbor][current_node]
+        #TODO: continue here
         pass
 
     # Recursive function for computing next hops using the prev dictionary
