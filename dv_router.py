@@ -71,14 +71,18 @@ class DVRouter(Router):
         #
         # (3) Make sure you update self.fwd_table[dst] to reflect the current best choice
         #       of next hop to destination dst. simulator.py uses this to check your implementation.
-        
-        for dest in self.dv:
-            if(dest == dv_adv):
-                # check if we can find a better route
-                if(self.dv[dest] > adv_router[dv_adv]):
-                    self.dv[dest] = adv_router[dv_adv]
-                
 
-
-
-        pass
+        for neighbor in dv_adv:
+            currentDistance = 0
+            if neighbor not in self.dv:
+                currentDistance = float('inf')
+                self.dv[neighbor] = float('inf')
+                self.fwd_table[neighbor] = adv_router
+            else:
+                currentDistance = self.dv[neighbor]
+            cost = self.links[adv_router]
+            dest_distance = dv_adv[neighbor]
+            if (currentDistance > cost + dest_distance):
+                self.dv[neighbor] = cost + dest_distance
+                self.fwd_table[neighbor] = adv_router
+                self.dv_change = True
