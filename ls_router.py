@@ -46,17 +46,16 @@ class LSRouter(Router):
             # TODO: Go through the LSAs received so far.
             # broadcast each LSA to this router's neighbors if the LSA has not been broadcasted yet
             for lsa in self.lsa_dict:
-                print(self.broadcasted)
-                print("yo what is", lsa)
-                print("before if lsa_dict is", self.lsa_dict)  
                 if self.broadcasted[lsa] == False:
+                    # i am now broadcasting set myself to true
+                    self.broadcasted[lsa] = True
                     for neighbor in self.neighbors:
-                        updated_links = self.links | neighbor.links
-                        # print("hello what is updated_links here", updated_links)
-                        # print("hi this is lsa and should be added to broadcasted", lsa)
-                        # self.broadcasted[neighbor.router_id] = False
-                        self.send(neighbor, updated_links, self.router_id)
-            print("lsa_dict is", self.lsa_dict)  
+                        # tell my neighbor about all my advertisments
+                        for my_lsas in self.lsa_dict:
+                            # aka send TODO change back
+                            neighbor.lsa_dict[my_lsas] = self.lsa_dict[my_lsas] 
+                            if my_lsas not in neighbor.broadcasted:
+                                neighbor.broadcasted[my_lsas] = False
             pass
         else:
             return
@@ -90,9 +89,10 @@ class LSRouter(Router):
         # on the shortest path to this destination from this router.
 
         distances = dict()
-        print("what is lsa_dict here", self.lsa_dict)
+        prev = dict()
         for lsa in self.lsa_dict:
             distances[lsa] = float('inf')
+            prev[lsa] = -1
 
         queue = []
         queue.append((self.router_id, 0))
@@ -109,10 +109,12 @@ class LSRouter(Router):
 
                 if(current_distance + cost < neighbor_distance):
                     distances[neighbor] = current_distance + cost
+                    prev[neighbor] = current_node[0]
                     queue.append((neighbor, distances[neighbor]))
                     queue = sorted(queue, key = lambda x: x[1])
-        #TODO: continue here
-        print("this is fwd table", self.fwd_table)
+
+        for lsa in self.lsa_dict:
+            self.fwd_table[lsa] = self.next_hop(lsa, prev)
         pass
 
     # Recursive function for computing next hops using the prev dictionary
