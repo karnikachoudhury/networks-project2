@@ -52,8 +52,8 @@ class LSRouter(Router):
                     for neighbor in self.neighbors:
                         # tell my neighbor about all my advertisments
                         for my_lsas in self.lsa_dict:
-                            # aka send TODO change back
-                            neighbor.lsa_dict[my_lsas] = self.lsa_dict[my_lsas] 
+                            # neighbor.lsa_dict[my_lsas] = self.lsa_dict[my_lsas] 
+                            self.send(neighbor, self.lsa_dict[my_lsas], my_lsas)
                             if my_lsas not in neighbor.broadcasted:
                                 neighbor.broadcasted[my_lsas] = False
             pass
@@ -64,11 +64,25 @@ class LSRouter(Router):
         # TODO: do the same as run_one_tick above without computing routes
         # Return value: whether any new LSA was broadcasted at the current tick.
         # The return value is used by simulator.py to check for convergence.
+        newLSABroadcasted = False
+        for lsa in self.lsa_dict:
+            if self.broadcasted[lsa] == False:
+                # i am now broadcasting set myself to true
+                newLSABroadcasted = True
+                self.broadcasted[lsa] = True
+                for neighbor in self.neighbors:
+                    # tell my neighbor about all my advertisments
+                    for my_lsas in self.lsa_dict:
+                        # neighbor.lsa_dict[my_lsas] = self.lsa_dict[my_lsas] 
+                        self.send(neighbor, self.lsa_dict[my_lsas], my_lsas)
+                        if my_lsas not in neighbor.broadcasted:
+                            neighbor.broadcasted[my_lsas] = False
 
-        for broadcast in self.broadcasted:
-            if not broadcast:
-                return False
-        return True
+        return newLSABroadcasted
+        # for broadcast in self.broadcasted:
+        #     if not broadcast:
+        #         return False
+        # return True
 
     # Note that adv_router is the router that generated this advertisement,
     # which may be different from "self",
@@ -87,12 +101,12 @@ class LSRouter(Router):
         # (3) If it helps, you can use the helper function next_hop below to compute the next hop once you
         # have populated the prev dictionary which maps a destination to the penultimate hop
         # on the shortest path to this destination from this router.
-
         distances = dict()
         prev = dict()
         for lsa in self.lsa_dict:
             distances[lsa] = float('inf')
             prev[lsa] = -1
+            # print(lsa.fwd_table)
 
         queue = []
         queue.append((self.router_id, 0))
