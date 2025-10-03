@@ -103,6 +103,7 @@ class LSRouter(Router):
         # on the shortest path to this destination from this router.
         distances = dict()
         prev = dict()
+        visited = set()
         for lsa in self.lsa_dict:
             distances[lsa] = float('inf')
             prev[lsa] = -1
@@ -114,8 +115,10 @@ class LSRouter(Router):
         while len(queue) != 0:
             current_node = queue.pop(0)
             distances[current_node[0]] = current_node[1]
-
+            visited.add(current_node)
             for neighbor in self.lsa_dict[current_node[0]]:
+                if neighbor in visited:
+                    continue
                 current_distance = distances[current_node[0]]
                 cost = self.lsa_dict[current_node[0]][neighbor]
                 neighbor_distance = distances[neighbor]
@@ -126,9 +129,14 @@ class LSRouter(Router):
                     prev[neighbor] = current_node[0]
                     queue.append((neighbor, distances[neighbor]))
                     queue = sorted(queue, key = lambda x: x[1])
+                
 
         for lsa in self.lsa_dict:
-            self.fwd_table[lsa] = self.next_hop(lsa, prev)
+            nh = self.next_hop(lsa, prev)
+            # ensure self->self exists
+            if lsa == self.router_id:
+                nh = self.router_id
+            self.fwd_table[lsa] = nh
         pass
 
     # Recursive function for computing next hops using the prev dictionary
